@@ -28,6 +28,17 @@ enum Span: String {
     case fiveHour = "5H", weekly = "7D"
 }
 
+enum PercentageMode: String, CaseIterable {
+    case used, remaining
+
+    var title: String {
+        switch self {
+        case .used: return L10n.usedMode
+        case .remaining: return L10n.remainingMode
+        }
+    }
+}
+
 /// Everything needed to draw one ring.
 struct RingInfo {
     let provider: String   // "GPT" / "Claude"
@@ -36,8 +47,16 @@ struct RingInfo {
     let window: LimitWindow?
     let failed: Bool
     let caption: String     // line under the ring in the Card style
+    let percentageMode: PercentageMode
 
-    /// The arc shows what is left; the number in the middle shows what is used.
+    var displayedPercent: Int? {
+        window.map { window in
+            let value = percentageMode == .used ? window.usedPercent : 100 - window.usedPercent
+            return Int(max(0, min(100, value)).rounded())
+        }
+    }
+
+    /// The arc shows what is left; the number follows the selected percentage mode.
     var remaining: Double? {
         window.map { max(0, min(1, 1 - $0.usedPercent / 100)) }
     }

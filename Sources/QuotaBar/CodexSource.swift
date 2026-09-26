@@ -2,13 +2,16 @@ import Foundation
 
 /// Reads GPT (Codex) usage through the `codex app-server` bundled with the ChatGPT desktop app.
 enum CodexSource {
-    static let candidates = [
-        "/Applications/ChatGPT.app/Contents/Resources/codex",
-        "/Applications/Codex.app/Contents/Resources/codex",
-        "/opt/homebrew/bin/codex",
-        "/usr/local/bin/codex",
-        NSHomeDirectory() + "/.local/bin/codex",
-    ]
+    static let candidates: [String] = {
+        let appRoots = ["/Applications", NSHomeDirectory() + "/Applications"]
+            .flatMap { root in [root + "/ChatGPT.app", root + "/Codex.app"] }
+        let bundled = appRoots.flatMap { app in
+            [app + "/Contents/Resources/codex-cli/bin/codex",
+             app + "/Contents/Resources/codex"]
+        }
+        return bundled + ["/opt/homebrew/bin/codex", "/usr/local/bin/codex",
+                          NSHomeDirectory() + "/.local/bin/codex"]
+    }()
 
     static func fetch(timeout: TimeInterval = 20, completion: @escaping (Result<ProviderUsage, SourceError>) -> Void) {
         DispatchQueue.global(qos: .utility).async {
@@ -31,7 +34,7 @@ enum CodexSource {
         do { try process.run() } catch { return .failure(.launchFailed) }
 
         let requests = [
-            #"{"method":"initialize","id":0,"params":{"clientInfo":{"name":"quotabar","title":"QuotaBar","version":"1.0.1"}}}"#,
+            #"{"method":"initialize","id":0,"params":{"clientInfo":{"name":"quotabar","title":"QuotaBar","version":"1.0.2"}}}"#,
             #"{"method":"initialized","params":{}}"#,
             #"{"method":"account/rateLimits/read","id":1,"params":{"excludeResetCreditDetails":true}}"#,
         ]

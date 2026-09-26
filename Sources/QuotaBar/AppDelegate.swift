@@ -18,6 +18,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         set { UserDefaults.standard.set(newValue.rawValue, forKey: "style") }
     }
 
+    private var percentageMode: PercentageMode {
+        get { PercentageMode(rawValue: UserDefaults.standard.string(forKey: "percentageMode") ?? "") ?? .used }
+        set { UserDefaults.standard.set(newValue.rawValue, forKey: "percentageMode") }
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         menu.delegate = self
         menu.autoenablesItems = false
@@ -78,7 +83,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             else if state.usage == nil { caption = "…" }
             else if let w = window { caption = w.resetsAt.map { Fmt.short($0, now: now) } ?? L10n.wasReset }
             else { caption = L10n.notOnPlan }
-            return RingInfo(provider: name, span: span, tint: tint, window: window, failed: state.failed, caption: caption)
+            return RingInfo(provider: name, span: span, tint: tint, window: window,
+                            failed: state.failed, caption: caption, percentageMode: percentageMode)
         }
         return [
             make("GPT", Tint.gpt, chat, .fiveHour),
@@ -100,8 +106,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     private func summaryLines(_ rings: [RingInfo]) -> [String] {
         rings.map { r in
             let label = "\(r.provider) \(r.span.rawValue)"
-            if let w = r.window {
-                return L10n.used(label, Int(w.usedPercent.rounded()), resets: w.resetsAt.map(Fmt.long))
+            if let w = r.window, let percent = r.displayedPercent {
+                return L10n.percentage(label, percent, mode: percentageMode,
+                                       resets: w.resetsAt.map(Fmt.long))
             }
             return L10n.captionLine(label, r.caption)
         }
@@ -226,6 +233,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         applyStyle()
     }
 
+    @objc private func choosePercentageMode(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String,
+              let mode = PercentageMode(rawValue: raw), mode != percentageMode else { return }
+        percentageMode = mode
+        redraw()
+    }
+
     // MARK: - Menu (rebuilt every time it opens, so it is always current)
 
     func menuNeedsUpdate(_ menu: NSMenu) {
@@ -258,6 +272,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         }
         styleItem.submenu = sub
         menu.addItem(styleItem)
+
+        let percentageItem = NSMenuItem(title: L10n.percentageDisplay, action: nil, keyEquivalent: "")
+        let percentageSubmenu = NSMenu()
+        for mode in PercentageMode.allCases {
+            let item = NSMenuItem(title: mode.title, action: #selector(choosePercentageMode(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = mode.rawValue
+            item.state = mode == percentageMode ? .on : .off
+            percentageSubmenu.addItem(item)
+        }
+        percentageItem.submenu = percentageSubmenu
+        menu.addItem(percentageItem)
 
         let refresh = NSMenuItem(title: L10n.refresh, action: #selector(refreshNow), keyEquivalent: "r")
         refresh.target = self

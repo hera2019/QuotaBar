@@ -28,11 +28,15 @@ enum L10n {
     static var wasReset: String { t("Reset", "已重置", "已重置") }
     static var notOnPlan: String { t("N/A", "无此额度", "無此額度") }
 
-    static func used(_ label: String, _ percent: Int, resets: String?) -> String {
-        guard let resets else { return t("\(label)   \(percent)% used", "\(label)　已用 \(percent)%", "\(label)　已用 \(percent)%") }
-        return t("\(label)   \(percent)% used · resets \(resets)",
-                 "\(label)　已用 \(percent)% · \(resets) 重置",
-                 "\(label)　已用 \(percent)% · \(resets) 重置")
+    static func percentage(_ label: String, _ percent: Int, mode: PercentageMode, resets: String?) -> String {
+        let amount: String
+        switch mode {
+        case .used: amount = t("\(percent)% used", "已用 \(percent)%", "已用 \(percent)%")
+        case .remaining: amount = t("\(percent)% remaining", "剩余 \(percent)%", "剩餘 \(percent)%")
+        }
+        let line = t("\(label)   \(amount)", "\(label)　\(amount)", "\(label)　\(amount)")
+        guard let resets else { return line }
+        return t("\(line) · resets \(resets)", "\(line) · \(resets) 重置", "\(line) · \(resets) 重置")
     }
 
     static func captionLine(_ label: String, _ caption: String) -> String {
@@ -50,6 +54,9 @@ enum L10n {
     // Menu
     static func claudeUpdated(_ when: String) -> String { t("Claude data updated \(when)", "Claude 资料更新于 \(when)", "Claude 資料更新於 \(when)") }
     static var display: String { t("Display", "显示形式", "顯示形式") }
+    static var percentageDisplay: String { t("Percentages", "百分比显示", "百分比顯示") }
+    static var usedMode: String { t("Used", "已用", "已用") }
+    static var remainingMode: String { t("Remaining", "剩余", "剩餘") }
     static var refresh: String { t("Refresh Now", "立即刷新", "立即重新整理") }
     static var quit: String { t("Quit QuotaBar", "退出 QuotaBar", "結束 QuotaBar") }
 }

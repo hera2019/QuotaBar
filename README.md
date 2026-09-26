@@ -27,7 +27,7 @@ The app is in English, or Chinese (Simplified or Traditional) when that's your s
 |---|---|
 | Order | GPT 5H · GPT 7D · Claude 5H · Claude 7D |
 | Color | Green track = GPT, orange track = Claude |
-| Number | Percent **used**: `92` means 92% used |
+| Number | Percent **used** by default. Choose **Percentages → Remaining** in the menu to show what's left instead. Your choice is saved. |
 | Arc | What's **left**. Turns red below 15% |
 | `–` | Your plan doesn't have this limit (e.g. ChatGPT Plus shows only a weekly Codex limit) |
 | `!` | Couldn't read the data. Open the menu to see why |
@@ -35,6 +35,7 @@ The app is in English, or Chinese (Simplified or Traditional) when that's your s
 Click the menu bar icon, or right-click a floating window, to:
 - see exact percentages and reset times
 - switch **Display**: Menu Bar, Thin Strip (a 26-pixel bar you can park next to window title bars), or Card
+- switch **Percentages** between Used and Remaining (for the ring numbers, menu details, and tooltips)
 - refresh (⌘R) or quit
 
 Floating windows can be dragged anywhere, and each style remembers its own position.
@@ -43,7 +44,7 @@ Floating windows can be dragged anywhere, and each style remembers its own posit
 
 ### GPT (Codex)
 
-Nothing to set up if the **ChatGPT desktop app** is installed and signed in. QuotaBar runs the `codex` tool bundled inside it and asks for your account's Codex rate limits every 3 minutes. It also finds a standalone `codex` CLI in `/opt/homebrew/bin`, `/usr/local/bin`, or `~/.local/bin`.
+Nothing to set up if the **ChatGPT desktop app** is installed and signed in. QuotaBar runs its bundled `codex` tool and asks for your account's Codex rate limits every 3 minutes. It supports the newer `Contents/Resources/codex-cli/bin/codex` location as well as the older `Contents/Resources/codex` location. It also finds a standalone `codex` CLI in `/opt/homebrew/bin`, `/usr/local/bin`, or `~/.local/bin`.
 
 ### Claude
 
@@ -104,7 +105,7 @@ This produces `build/QuotaBar.app` (universal) and `build/QuotaBar.zip`.
 ### 怎么看
 
 - 顺序：GPT 5H、GPT 7D、Claude 5H、Claude 7D。**绿色底圈是 GPT，橙色底圈是 Claude。**
-- 中间的数字是**已用**百分比，比如 `92` 就是已用 92%。
+- 中间的数字默认是**已用**百分比，比如 `92` 就是已用 92%。可在菜单的 **百分比显示 → 剩余** 中改为显示剩余百分比；选择会被记住。
 - 弧线表示**剩余**额度，剩下不到 15% 时变红。
 - `–`：你的方案没有这项额度（比如 ChatGPT Plus 只有 Codex 的 7 天额度）。
 - `!`：读取失败，打开菜单可以看到原因。
@@ -112,13 +113,14 @@ This produces `build/QuotaBar.app` (universal) and `build/QuotaBar.zip`.
 点一下菜单栏的圆圈，或者右键点浮窗，可以：
 - 查看每项的精确百分比和重置时间
 - 切换**显示形式**：菜单栏、细条浮窗（高 26 像素，可以放在各程序标题栏那一带），或标准浮窗
+- 切换**百分比显示**：已用或剩余；圆圈数字、菜单明细和悬停提示会一起更新
 - 立即刷新（⌘R），或退出
 
 浮窗可以拖到任何位置，每种形式各自记住自己的位置。
 
 ### 数据来源
 
-**GPT**：安装并登录 **ChatGPT 桌面版** 就行，不用另外设置。QuotaBar 每 3 分钟通过桌面版自带的 `codex` 查询一次。
+**GPT**：安装并登录 **ChatGPT 桌面版** 就行，不用另外设置。QuotaBar 每 3 分钟通过桌面版自带的 `codex` 查询一次；兼容新版的 `Contents/Resources/codex-cli/bin/codex` 和旧版的 `Contents/Resources/codex`。
 
 **Claude**：Claude 不会把用量提供给其他程序，所以要**请 Claude 自己写给 QuotaBar**。把下面这段加进 `~/.claude/CLAUDE.md`（文件不存在就新建一个）：
 

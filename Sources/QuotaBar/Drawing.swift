@@ -21,10 +21,10 @@ enum Painter {
             arc.stroke()
         }
 
-        // The number is percent used: 92 means 92% used.
+        // The number follows the user's choice; the arc always shows the remaining quota.
         let text: String, color: NSColor
-        if let w = r.window {
-            text = "\(Int(w.usedPercent.rounded()))"; color = .labelColor
+        if let percent = r.displayedPercent {
+            text = "\(percent)"; color = .labelColor
         } else if r.failed {
             text = "!"; color = .systemOrange
         } else {
