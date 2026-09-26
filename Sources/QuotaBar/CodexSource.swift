@@ -31,9 +31,9 @@ enum CodexSource {
         do { try process.run() } catch { return .failure(.launchFailed) }
 
         let requests = [
-            #"{"method":"initialize","id":0,"params":{"clientInfo":{"name":"quotabar","title":"QuotaBar","version":"1.0"}}}"#,
+            #"{"method":"initialize","id":0,"params":{"clientInfo":{"name":"quotabar","title":"QuotaBar","version":"1.0.1"}}}"#,
             #"{"method":"initialized","params":{}}"#,
-            #"{"method":"account/rateLimits/read","id":1}"#,
+            #"{"method":"account/rateLimits/read","id":1,"params":{"excludeResetCreditDetails":true}}"#,
         ]
         stdin.fileHandleForWriting.write((requests.joined(separator: "\n") + "\n").data(using: .utf8)!)
 
@@ -48,6 +48,7 @@ enum CodexSource {
         }
 
         var buffer = Data()
+        var awaitingLegacyResponse = false
         let reader = stdout.fileHandleForReading
         // availableData returns whatever has arrived; read(upToCount:) would wait for the full count.
         while case let chunk = reader.availableData, !chunk.isEmpty {
@@ -56,7 +57,17 @@ enum CodexSource {
                 let line = buffer[buffer.startIndex..<nl]
                 buffer.removeSubrange(buffer.startIndex...nl)
                 guard let obj = (try? JSONSerialization.jsonObject(with: line)) as? [String: Any],
-                      (obj["id"] as? NSNumber)?.intValue == 1 else { continue }
+                      let id = (obj["id"] as? NSNumber)?.intValue else { continue }
+                if id == 1, let error = obj["error"] as? [String: Any],
+                   let code = (error["code"] as? NSNumber)?.intValue,
+                   code == -32600 || code == -32602 {
+                    // Older app-servers accept only a request without params.
+                    let legacy = #"{"method":"account/rateLimits/read","id":2}"# + "\n"
+                    stdin.fileHandleForWriting.write(Data(legacy.utf8))
+                    awaitingLegacyResponse = true
+                    continue
+                }
+                guard id == (awaitingLegacyResponse ? 2 : 1) else { continue }
                 return parse(obj)
             }
         }
@@ -68,8 +79,8 @@ enum CodexSource {
             return .failure(.message((err["message"] as? String) ?? L10n.codexError))
         }
         guard let result = obj["result"] as? [String: Any] else { return .failure(.malformed) }
-        let limits = (result["rateLimits"] as? [String: Any])
-            ?? ((result["rateLimitsByLimitId"] as? [String: Any])?["codex"] as? [String: Any])
+        let limits = ((result["rateLimitsByLimitId"] as? [String: Any])?["codex"] as? [String: Any])
+            ?? (result["rateLimits"] as? [String: Any])
         guard let limits else { return .failure(.malformed) }
 
         // Either window may be null (e.g. Plus has only a weekly limit). Classify by duration, not position.
